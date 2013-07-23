@@ -1,16 +1,52 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".IMAX" >
+    android:orientation="vertical">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/hello_world" />
+    
+    <Spinner
+	    android:id="@+id/id_spinner"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    />
+    
+    <DatePicker
+	    android:id="@+id/datePicker1"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    />
+    
+    <Spinner
+	    android:id="@+id/id_spinner_interval"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    />
+    
+    <LinearLayout
+        android:layout_width="match_parent" 
+        android:layout_height="0dp"
+       	android:layout_weight="1"
+       	android:orientation="horizontal"
+        >
 
-</RelativeLayout>
+	    <Button
+	        android:id="@+id/id_bt_start"
+	        android:layout_width="0dp"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="1"
+	        android:text="START" 
+	        />
+		<Button
+	        android:id="@+id/id_bt_stop"
+	        android:layout_width="0dp"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="1"
+	        android:text="STOP" 
+	        />
+
+	</LinearLayout>
+
+
+</LinearLayout>
