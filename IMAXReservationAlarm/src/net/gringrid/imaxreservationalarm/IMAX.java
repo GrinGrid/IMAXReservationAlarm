@@ -1,6 +1,22 @@
 package net.gringrid.imaxreservationalarm;
 
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+
 import android.os.Bundle;
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -28,8 +44,11 @@ public class IMAX extends Activity implements OnClickListener{
 	private int mInterval;
 	private static final int NOTIFICATION_ID_MAIN = 7576;
 
+	private final String CURRENT_MOVIE_LIST_URL = "http://m.cgv.co.kr/Movie/MovieList.aspx";
+	private final String SCHEDULED_MOVIE_LIST_URL = "http://m.cgv.co.kr/Movie/MovieList.aspx?MovieType=next";
+	
 	private String[] mImaxNameList = {
-			"신도림"
+			"왕십리"
 			,"용산"
 			,"상암"
 			,"인천"
@@ -79,16 +98,8 @@ public class IMAX extends Activity implements OnClickListener{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_imax);
 
-		View view = findViewById(R.id.id_bt_start);
-		if ( view != null ){
-			view.setOnClickListener(this);
-		}
-
-		view = findViewById(R.id.id_bt_stop);
-		if ( view != null ){
-			view.setOnClickListener(this);
-		}
-
+		registEvent();
+		
 		Spinner id_spinner = (Spinner)findViewById(R.id.id_spinner);
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, mImaxNameList);
 		id_spinner.setAdapter(adapter);
@@ -134,7 +145,26 @@ public class IMAX extends Activity implements OnClickListener{
 	}
 
 
+	private void registEvent(){
+		View view = findViewById(R.id.id_bt_start);
+		if ( view != null ){
+			view.setOnClickListener(this);
+		}
 
+		view = findViewById(R.id.id_bt_stop);
+		if ( view != null ){
+			view.setOnClickListener(this);
+		}
+		view = findViewById(R.id.id_bt_current_movie);
+		if ( view != null ){
+			view.setOnClickListener(this);
+		}
+		view = findViewById(R.id.id_bt_scheduled_movie);
+		if ( view != null ){
+			view.setOnClickListener(this);
+		}
+
+	}
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
@@ -155,9 +185,117 @@ public class IMAX extends Activity implements OnClickListener{
 			stopAlarm();
 			break;
 
+		case R.id.id_bt_current_movie:
+			loadMovieList( CURRENT_MOVIE_LIST_URL );
+			break;
+
+		case R.id.id_bt_scheduled_movie:
+			loadMovieList( SCHEDULED_MOVIE_LIST_URL );
+			break;
+
 		default:
 			break;
 		}
+	}
+
+
+	private void loadMovieList( String url ) {
+		
+		HttpPost httpPost = new HttpPost(url);
+        HttpClient client = new DefaultHttpClient();
+        HttpResponse response;
+        
+        ArrayList<String> mTotalList = new ArrayList<String>();
+        HashMap<String, String> moviewTag = new HashMap<String, String>();
+        HashMap<String, String> moview = new HashMap<String, String>();
+                
+        try {        	
+        	
+            response = client.execute(httpPost);
+            
+            HttpEntity entity = response.getEntity();            
+            InputStream stream = entity.getContent();
+            
+            //BufferedReader br = new BufferedReader(new InputStreamReader(stream, "EUC-KR"));
+            BufferedReader br = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+            
+            String line = null;
+            
+            //Reader reader=new InputStreamReader(stream);
+            while ( (line = br.readLine()) != null ){            	
+            	mTotalList.add(line);            	
+            }
+            
+            int totalSize = mTotalList.size();
+            for ( int i=0; i<totalSize; i++ ){
+            	if ( mTotalList.get(i).trim().indexOf( "<p class=\"subject\">" ) != -1 ){
+            		moviewTag.put(mTotalList.get(i+1), mTotalList.get(i+2));
+            	}
+            }
+            
+            String idRegex = "([0-9]*)";
+            Pattern idPattern = Pattern.compile(idRegex);
+    		Matcher idMatcher = null;
+    		
+    		String nameRegex = "[^>]*>?([^<]*)";
+            Pattern namePattern = Pattern.compile(nameRegex);
+    		Matcher nameMatcher = null;
+    		
+    		String moviewID = null;
+    		String moviewName = null;
+    		
+    		for (Map.Entry<String,String> entry : moviewTag.entrySet()) {
+    			
+    			idMatcher = idPattern.matcher(entry.getKey());
+    			    			
+    			
+    			while( idMatcher.find() ){
+    				if ( idMatcher.group(1).trim().length() > 0 ){
+    					moviewID = idMatcher.group(1).trim();
+    				}
+    			}    			
+    			
+    			nameMatcher = namePattern.matcher(entry.getValue());
+    			    			
+    			while( nameMatcher.find() ){
+    				if ( nameMatcher.group(1).trim().length() > 0 ){
+    					moviewName = nameMatcher.group(1).trim();
+    				}
+    			}
+    			
+    			moview.put(moviewID, moviewName);
+            }
+    		
+    		ArrayList<String> movieName = new ArrayList<String>();
+    		
+    		for (Map.Entry<String,String> entry : moview.entrySet()) {
+    			
+    			Log.d("jiho", "[ "+entry.getKey()+" ] : "+entry.getValue());
+    			movieName.add(entry.getValue());	
+    		}
+    		
+    		
+    		int spinnerId = 0;
+    		String spinnerTitle = null;
+    		
+    		if ( url.equals( CURRENT_MOVIE_LIST_URL )){
+    			spinnerId = R.id.id_spinner_current_movie;
+    			spinnerTitle = "현재상영작";
+    		}else if ( url.equals( SCHEDULED_MOVIE_LIST_URL )){
+    			spinnerId = R.id.id_spinner_scheduled_movie;
+    			spinnerTitle = "상영예정작";
+    			
+    		}
+    		
+    		Spinner id_spinner = (Spinner)findViewById( spinnerId );
+    		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, movieName);
+    		id_spinner.setAdapter(adapter);
+    		id_spinner.setPrompt( spinnerTitle );
+		    
+        }catch (Exception e){
+        	
+        }
+		
 	}
 
 

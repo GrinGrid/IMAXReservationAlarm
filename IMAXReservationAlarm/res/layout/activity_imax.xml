@@ -26,8 +26,7 @@
     
     <LinearLayout
         android:layout_width="match_parent" 
-        android:layout_height="0dp"
-       	android:layout_weight="1"
+        android:layout_height="wrap_content"       	
        	android:orientation="horizontal"
         >
 
@@ -46,7 +45,40 @@
 	        android:text="STOP" 
 	        />
 
-	</LinearLayout>
+	</LinearLayout>	
+        <LinearLayout
+        android:layout_width="match_parent" 
+        android:layout_height="0dp"
+       	android:layout_weight="1"
+       	android:orientation="horizontal"
+        >
 
+	    <Button
+	        android:id="@+id/id_bt_current_movie"
+	        android:layout_width="0dp"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="1"
+	        android:text="현재상영작" 
+	        />
+		<Button
+	        android:id="@+id/id_bt_scheduled_movie"
+	        android:layout_width="0dp"
+	        android:layout_height="wrap_content"
+	        android:layout_weight="1"
+	        android:text="상영예정작" 
+	        />
+
+	</LinearLayout>
+	
+	<Spinner
+	    android:id="@+id/id_spinner_current_movie"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    />
+    <Spinner
+	    android:id="@+id/id_spinner_scheduled_movie"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    />
 
 </LinearLayout>

@@ -8,6 +8,8 @@ import java.io.InputStreamReader;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -65,7 +67,8 @@ public class SearchAlarmReceiver extends BroadcastReceiver {
             InputStream stream = entity.getContent();
             
             // 한글을 위해
-            BufferedReader br = new BufferedReader(new InputStreamReader(stream, "EUC-KR"));
+            //BufferedReader br = new BufferedReader(new InputStreamReader(stream, "EUC-KR"));
+            BufferedReader br = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
             
             String line = null;
             mList = new ArrayList<String>();
@@ -77,9 +80,27 @@ public class SearchAlarmReceiver extends BroadcastReceiver {
             String findStr = "class=\"tlt\"";
     		String imaxStr = "IMAX";
     		
+    		
+    		
+    		String regex = "[^>]*>?([^<]*)";
+    		Pattern p = Pattern.compile(regex);
+    		
+    		
     		for ( String totalLine : mTotalList ){
     			if ( totalLine.indexOf( findStr ) != -1 ){
     				if ( totalLine.indexOf( imaxStr) != -1 ){
+    					
+    					Matcher m = p.matcher(totalLine);
+    		    		String subject = null;
+    		    		
+    		    		while( m.find() ){
+    		    			if ( m.group(1).trim().length() > 0 ){
+    		    				subject = m.group(1).trim();
+    		    				Log.d("jiho", "totalLine : "+totalLine.trim());
+    		    				Log.d("jiho", "NAME : "+m.group(1).trim());
+    		    			}
+    		    		}
+    		    		
     					//mList.add(totalLine);
     					
     					long time = System.currentTimeMillis(); 
@@ -88,8 +109,8 @@ public class SearchAlarmReceiver extends BroadcastReceiver {
                 		
                 		NotificationCompat.Builder notiBuilder = new NotificationCompat.Builder(mContext);
             			notiBuilder.setSmallIcon(R.drawable.ic_launcher);
-            			notiBuilder.setContentTitle("CGV Alarm");
-            			notiBuilder.setContentText("TIME : "+currentTime);
+            			notiBuilder.setContentTitle("IMAX 예매 알리미");
+            			notiBuilder.setContentText("[ "+subject+ " ] " + "영화가 예매 가능합니다.");
             			
             			Notification notification = notiBuilder.build();
 
