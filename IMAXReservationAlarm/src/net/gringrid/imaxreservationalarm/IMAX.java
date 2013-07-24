@@ -17,12 +17,14 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
@@ -33,6 +35,7 @@ import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.Spinner;
 
@@ -186,118 +189,22 @@ public class IMAX extends Activity implements OnClickListener{
 			break;
 
 		case R.id.id_bt_current_movie:
-			loadMovieList( CURRENT_MOVIE_LIST_URL );
+			new LoadMovieList().execute(CURRENT_MOVIE_LIST_URL);
+			//loadMovieList( CURRENT_MOVIE_LIST_URL );
 			break;
 
 		case R.id.id_bt_scheduled_movie:
-			loadMovieList( SCHEDULED_MOVIE_LIST_URL );
+			new LoadMovieList().execute(SCHEDULED_MOVIE_LIST_URL);
+			//loadMovieList( SCHEDULED_MOVIE_LIST_URL );
 			break;
 
 		default:
 			break;
 		}
 	}
-
-
-	private void loadMovieList( String url ) {
-		
-		HttpPost httpPost = new HttpPost(url);
-        HttpClient client = new DefaultHttpClient();
-        HttpResponse response;
-        
-        ArrayList<String> mTotalList = new ArrayList<String>();
-        HashMap<String, String> moviewTag = new HashMap<String, String>();
-        HashMap<String, String> moview = new HashMap<String, String>();
-                
-        try {        	
-        	
-            response = client.execute(httpPost);
-            
-            HttpEntity entity = response.getEntity();            
-            InputStream stream = entity.getContent();
-            
-            //BufferedReader br = new BufferedReader(new InputStreamReader(stream, "EUC-KR"));
-            BufferedReader br = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
-            
-            String line = null;
-            
-            //Reader reader=new InputStreamReader(stream);
-            while ( (line = br.readLine()) != null ){            	
-            	mTotalList.add(line);            	
-            }
-            
-            int totalSize = mTotalList.size();
-            for ( int i=0; i<totalSize; i++ ){
-            	if ( mTotalList.get(i).trim().indexOf( "<p class=\"subject\">" ) != -1 ){
-            		moviewTag.put(mTotalList.get(i+1), mTotalList.get(i+2));
-            	}
-            }
-            
-            String idRegex = "([0-9]*)";
-            Pattern idPattern = Pattern.compile(idRegex);
-    		Matcher idMatcher = null;
-    		
-    		String nameRegex = "[^>]*>?([^<]*)";
-            Pattern namePattern = Pattern.compile(nameRegex);
-    		Matcher nameMatcher = null;
-    		
-    		String moviewID = null;
-    		String moviewName = null;
-    		
-    		for (Map.Entry<String,String> entry : moviewTag.entrySet()) {
-    			
-    			idMatcher = idPattern.matcher(entry.getKey());
-    			    			
-    			
-    			while( idMatcher.find() ){
-    				if ( idMatcher.group(1).trim().length() > 0 ){
-    					moviewID = idMatcher.group(1).trim();
-    				}
-    			}    			
-    			
-    			nameMatcher = namePattern.matcher(entry.getValue());
-    			    			
-    			while( nameMatcher.find() ){
-    				if ( nameMatcher.group(1).trim().length() > 0 ){
-    					moviewName = nameMatcher.group(1).trim();
-    				}
-    			}
-    			
-    			moview.put(moviewID, moviewName);
-            }
-    		
-    		ArrayList<String> movieName = new ArrayList<String>();
-    		
-    		for (Map.Entry<String,String> entry : moview.entrySet()) {
-    			
-    			Log.d("jiho", "[ "+entry.getKey()+" ] : "+entry.getValue());
-    			movieName.add(entry.getValue());	
-    		}
-    		
-    		
-    		int spinnerId = 0;
-    		String spinnerTitle = null;
-    		
-    		if ( url.equals( CURRENT_MOVIE_LIST_URL )){
-    			spinnerId = R.id.id_spinner_current_movie;
-    			spinnerTitle = "현재상영작";
-    		}else if ( url.equals( SCHEDULED_MOVIE_LIST_URL )){
-    			spinnerId = R.id.id_spinner_scheduled_movie;
-    			spinnerTitle = "상영예정작";
-    			
-    		}
-    		
-    		Spinner id_spinner = (Spinner)findViewById( spinnerId );
-    		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, movieName);
-    		id_spinner.setAdapter(adapter);
-    		id_spinner.setPrompt( spinnerTitle );
-		    
-        }catch (Exception e){
-        	
-        }
-		
-	}
-
+	
+	
+	
 
 	private void startAlarm(){
 		NotificationManager notificationManager = null; 
@@ -376,5 +283,124 @@ public class IMAX extends Activity implements OnClickListener{
 
 	}
      
+	private class LoadMovieList extends AsyncTask<String, Void, String>{
+		private ProgressDialog progressDialog;
+		HttpPost httpPost;
+        HttpClient client = new DefaultHttpClient();
+        HttpResponse response;
+        String url;
+        
+        ArrayList<String> mTotalList = new ArrayList<String>();
+        HashMap<String, String> moviewTag = new HashMap<String, String>();
+        HashMap<String, String> moview = new HashMap<String, String>();
+        
+		@Override
+		protected String doInBackground(String... params) {
+			        
+	        try {        	
+	        	url = params[0];
+	        	httpPost = new HttpPost(url);
+	            response = client.execute(httpPost);
+	            
+	            HttpEntity entity = response.getEntity();            
+	            InputStream stream = entity.getContent();
+	            
+	            //BufferedReader br = new BufferedReader(new InputStreamReader(stream, "EUC-KR"));
+	            BufferedReader br = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+	            
+	            String line = null;
+	            
+	            //Reader reader=new InputStreamReader(stream);
+	            while ( (line = br.readLine()) != null ){            	
+	            	mTotalList.add(line);            	
+	            }
+	            
+	            int totalSize = mTotalList.size();
+	            for ( int i=0; i<totalSize; i++ ){
+	            	if ( mTotalList.get(i).trim().indexOf( "<p class=\"subject\">" ) != -1 ){
+	            		moviewTag.put(mTotalList.get(i+1), mTotalList.get(i+2));
+	            	}
+	            }
+	            
+	            String idRegex = "([0-9]*)";
+	            Pattern idPattern = Pattern.compile(idRegex);
+	    		Matcher idMatcher = null;
+	    		
+	    		String nameRegex = "[^>]*>?([^<]*)";
+	            Pattern namePattern = Pattern.compile(nameRegex);
+	    		Matcher nameMatcher = null;
+	    		
+	    		String moviewID = null;
+	    		String moviewName = null;
+	    		
+	    		for (Map.Entry<String,String> entry : moviewTag.entrySet()) {
+	    			
+	    			idMatcher = idPattern.matcher(entry.getKey());	    			    			
+	    			
+	    			while( idMatcher.find() ){
+	    				if ( idMatcher.group(1).trim().length() > 0 ){
+	    					moviewID = idMatcher.group(1).trim();
+	    				}
+	    			}    			
+	    			
+	    			nameMatcher = namePattern.matcher(entry.getValue());
+	    			    			
+	    			while( nameMatcher.find() ){
+	    				if ( nameMatcher.group(1).trim().length() > 0 ){
+	    					moviewName = nameMatcher.group(1).trim();
+	    				}
+	    			}	    			
+	    			moview.put(moviewID, moviewName);
+	            }
+	        }catch (Exception e){
+	        	
+	        }	
+			
+			return null;
+		}
+		
+		
+		@Override
+		protected void onPreExecute() {
+			progressDialog= ProgressDialog.show(IMAX.this, null,"Loading movie list...", true);
+
+			super.onPreExecute();
+		}
+		
+		@Override
+		protected void onPostExecute(String result) {
+			int spinnerId = 0;
+    		String spinnerTitle = null;
+    		
+    		if ( url.equals( CURRENT_MOVIE_LIST_URL )){
+    			spinnerId = R.id.id_spinner_current_movie;
+    			spinnerTitle = "현재상영작";
+    		}else if ( url.equals( SCHEDULED_MOVIE_LIST_URL )){
+    			spinnerId = R.id.id_spinner_scheduled_movie;
+    			spinnerTitle = "상영예정작";
+    		}
+    		
+    		ArrayList<String> movieName = new ArrayList<String>();
+    		
+    		for (Map.Entry<String,String> entry : moview.entrySet()) {
+    			
+    			Log.d("jiho", "[ "+entry.getKey()+" ] : "+entry.getValue());
+    			movieName.add(entry.getValue());	
+    		}
+    		
+    		Spinner id_spinner = (Spinner)findViewById( spinnerId );
+    		ArrayAdapter<String> adapter = new ArrayAdapter<String>(IMAX.this, android.R.layout.simple_spinner_item, movieName);
+    		id_spinner.setAdapter(adapter);
+    		id_spinner.setPrompt( spinnerTitle );
+
+    		super.onPostExecute(result);
+			progressDialog.dismiss();
+		}
+		
+		@Override
+		protected void onProgressUpdate(Void... values) {
+			super.onProgressUpdate(values);
+		}
+	}
 
 }
